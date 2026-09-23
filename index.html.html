@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>আমার বর্তমান অবস্থান ও সময়সূচী</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f7f6; color: #333; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        h1 { color: #1a5276; font-size: 22px; margin-bottom: 10px; }
+        .clock-box { background: #ebf5fb; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; color: #2e86c1; }
+        .status-card { background: linear-gradient(135deg, #27ae60, #2ea043); color: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(39,174,96,0.3); }
+        .status-card h2 { font-size: 16px; font-weight: 400; opacity: 0.9; margin-bottom: 8px; }
+        .status-card .location { font-size: 24px; font-weight: 700; line-height: 1.4; }
+        .routine-toggle { background: #3498db; color: white; border: none; padding: 10px 20px; font-size: 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .routine-toggle:hover { background: #2980b9; }
+        .routine-table { display: none; margin-top: 20px; text-align: left; }
+        .day-title { font-weight: bold; color: #2c3e50; margin-top: 15px; margin-bottom: 5px; border-bottom: 2px solid #3498db; padding-bottom: 3px; }
+        ul { list-style: none; }
+        li { padding: 6px 0; border-bottom: 1px dotted #ccc; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>শিক্ষকের অবস্থান ও লাইভ স্ট্যাটাস</h1>
+    <div class="clock-box" id="liveClock">সময় লোড হচ্ছে...</div>
+
+    <div class="status-card">
+        <h2>বর্তমানে আমি আছি:</h2>
+        <div class="location" id="currentLocation">যাচাই করা হচ্ছে...</div>
+    </div>
+
+    <button class="routine-toggle" onclick="toggleRoutine()">সম্পূর্ণ ৫ দিনের রুটিন দেখুন</button>
+
+    <div class="routine-table" id="routineDetails"></div>
+</div>
+
+<script>
+const schedule = {
+    "Sunday": [
+        { start: "08:00", end: "08:40", text: "৫ম বি শাখায় গণিত অতিরিক্ত ক্লাসে" },
+        { start: "08:41", end: "09:15", text: "১০ম শ্রেণি পদার্থবিজ্ঞান অতিরিক্ত ক্লাসে" },
+        { start: "09:16", end: "09:50", text: "৫ম এ শাখায় গণিত অতিরিক্ত ক্লাসে" },
+        { start: "09:51", end: "10:08", text: "অফিসরুমে" },
+        { start: "10:10", end: "10:50", text: "৮ম শ্রেণির বিজ্ঞান ক্লাসে" },
+        { start: "10:51", end: "11:30", text: "অফিসরুমে" },
+        { start: "11:31", end: "12:10", text: "৫ম শ্রেণির বি শাখায় গণিত ক্লাসে" },
+        { start: "12:10", end: "12:40", text: "অফিসে / অফিসিয়াল কাজে" },
+        { start: "12:41", end: "13:20", text: "১০ম শ্রেণির পদার্থবিজ্ঞান ক্লাসে" },
+        { start: "13:21", end: "14:00", text: "৫ম এ শাখার গণিত ক্লাসে" },
+        { start: "14:00", end: "15:00", text: "লাঞ্চ বিরতি / বাসায়" },
+        { start: "15:00", end: "17:00", text: "অতিরিক্ত ক্লাসে" }
+    ],
+    "Monday": [
+        { start: "08:00", end: "08:40", text: "৫ম বি শাখায় গণিত অতিরিক্ত ক্লাসে" },
+        { start: "08:41", end: "09:15", text: "১০ম শ্রেণি পদার্থবিজ্ঞান অতিরিক্ত ক্লাসে" },
+        { start: "09:16", end: "09:50", text: "৫ম এ শাখায় গণিত অতিরিক্ত ক্লাসে" },
+        { start: "09:51", end: "10:08", text: "অফিসরুমে" },
+        { start: "10:10", end: "10:50", text: "৮ম শ্রেণির বিজ্ঞান ক্লাসে" },
+        { start: "10:51", end: "11:30", text: "অফিসরুমে" },
+        { start: "11:31", end: "12:10", text: "৫ম শ্রেণির বি শাখায় গণিত ক্লাসে" },
+        { start: "12:10", end: "12:40", text: "অফিসে / অফিসিয়াল কাজে" },
+        { start: "12:41", end: "13:20", text: "১০ম শ্রেণির পদার্থবিজ্ঞান ক্লাসে" },
+        { start: "13:21", end: "14:00", text: "৫ম এ শাখার গণিত ক্লাসে" },
+        { start: "14:00", end: "15:00", text: "লাঞ্চ বিরতি / বাসায়" },
+        { start: "15:00", end: "17:00", text: "অতিরিক্ত ক্লাসে" }
+    ],
+    "Tuesday": [
+        { start: "08:00", end: "08:40", text: "৫ম বি শাখায় গণিত অতিরিক্ত ক্লাসে" },
+        { start: "08:41", end: "09:15", text: "১০ম শ্রেণি পদার্থবিজ্ঞান অতিরিক্ত ক্লাসে" },
+        { start: "09:16", end: "09:50", text: "৫ম এ শাখায় গণিত অতিরিক্ত ক্লাসে" },
+        { start: "09:51", end: "10:08", text: "অফিসরুমে" },
+        { start: "10:10", end: "10:50", text: "৮ম শ্রেণির বিজ্ঞান ক্লাসে" },
+        { start: "10:51", end: "11:30", text: "৯ম শ্রেণির পদার্থবিজ্ঞান ক্লাসে" },
+        { start: "11:31", end: "12:10", text: "৫ম শ্রেণির বি শাখায় গণিত ক্লাসে" },
+        { start: "12:10", end: "12:40", text: "অফিসে / অফিসিয়াল কাজে" },
+        { start: "12:41", end: "13:20", text: "৫ম এ শাখার গণিত ক্লাসে" },
+        { start: "13:21", end: "14:00", text: "অফিসে" },
+        { start: "14:00", end: "15:00", text: "লাঞ্চ বিরতি / বাসায়" },
+        { start: "15:00", end: "17:00", text: "অতিরিক্ত ক্লাসে" }
+    ],
+    "Wednesday": [
+        { start: "08:00", end: "08:40", text: "৫ম বি শাখায় গণিত অতিরিক্ত ক্লাসে" },
+        { start: "08:41", end: "09:15", text: "১০ম শ্রেণি পদার্থবিজ্ঞান অতিরিক্ত ক্লাসে" },
+        { start: "09:16", end: "09:50", text: "৫ম এ শাখায় গণিত অতিরিক্ত ক্লাসে" },
+        { start: "09:51", end: "10:08", text: "অফিসরুমে" },
+        { start: "10:10", end: "10:50", text: "অফিসরুমে" },
+        { start: "10:51", end: "11:30", text: "৯ম শ্রেণির পদার্থবিজ্ঞান ক্লাসে" },
+        { start: "11:31", end: "12:10", text: "৫ম শ্রেণির বি শাখায় গণিত ক্লাসে" },
+        { start: "12:10", end: "12:40", text: "অফিসে / অফিসিয়াল কাজে" },
+        { start: "12:41", end: "13:20", text: "৫ম এ শাখার গণিত ক্লাসে" },
+        { start: "13:21", end: "14:00", text: "অফিসে" },
+        { start: "14:00", end: "15:00", text: "লাঞ্চ বিরতি / বাসায়" },
+        { start: "15:00", end: "17:00", text: "অতিরিক্ত ক্লাসে" }
+    ],
+    "Thursday": [
+        { start: "08:00", end: "08:40", text: "৫ম বি শাখায় গণিত অতিরিক্ত ক্লাসে" },
+        { start: "08:41", end: "09:15", text: "১০ম শ্রেণি পদার্থবিজ্ঞান অতিরিক্ত ক্লাসে" },
+        { start: "09:16", end: "09:50", text: "৫ম এ শাখায় গণিত অতিরিক্ত ক্লাসে" },
+        { start: "09:51", end: "10:08", text: "অফিসরুমে" },
+        { start: "10:10", end: "10:50", text: "অফিসরুমে" },
+        { start: "10:51", end: "11:30", text: "৯ম শ্রেণির পদার্থবিজ্ঞান ক্লাসে" },
+        { start: "11:31", end: "12:10", text: "৫ম শ্রেণির বি শাখায় গণিত ক্লাসে" },
+        { start: "12:10", end: "12:40", text: "অফিসে / অফিসিয়াল কাজে" },
+        { start: "12:41", end: "13:20", text: "১০ম শ্রেণির পদার্থবিজ্ঞান ক্লাসে" },
+        { start: "13:21", end: "14:00", text: "৫ম এ শাখার গণিত ক্লাসে" },
+        { start: "14:00", end: "15:00", text: "লাঞ্চ বিরতি / বাসায়" },
+        { start: "15:00", end: "17:00", text: "অতিরিক্ত ক্লাসে" }
+    ]
+};
+
+const dayMapBn = {
+    "Sunday": "রবিবার",
+    "Monday": "সোমবার",
+    "Tuesday": "মঙ্গলবার",
+    "Wednesday": "বুধবার",
+    "Thursday": "বৃহস্পতিবার",
+    "Friday": "শুক্রবার",
+    "Saturday": "শনিবার"
+};
+
+function updateStatus() {
+    const now = new Date();
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const currentDay = days[now.getDay()];
+    
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const currentTimeStr = `${hours}:${minutes}`;
+
+    document.getElementById("liveClock").innerText = `${dayMapBn[currentDay] || currentDay}, সময়: ${now.toLocaleTimeString('bn-BD')}`;
+
+    const todaySchedule = schedule[currentDay];
+    let currentTask = "বর্তমানে কোনো নির্ধারিত ক্লাস বা প্রাতিষ্ঠানিক কাজ নেই।";
+
+    if (todaySchedule) {
+        for (let item of todaySchedule) {
+            if (currentTimeStr >= item.start && currentTimeStr <= item.end) {
+                currentTask = item.text;
+                break;
+            }
+        }
+    } else {
+        currentTask = "আজ সাপ্তাহিক ছুটি / কোনো ক্লাস নেই।";
+    }
+
+    document.getElementById("currentLocation").innerText = currentTask;
+}
+
+function renderFullRoutine() {
+    const container = document.getElementById("routineDetails");
+    let html = "";
+    for (let day in schedule) {
+        html += `<div class="day-title">${dayMapBn[day]}</div><ul>`;
+        schedule[day].forEach(item => {
+            html += `<li><b>${item.start} - ${item.end}:</b> ${item.text}</li>`;
+        });
+        html += `</ul>`;
+    }
+    container.innerHTML = html;
+}
+
+function toggleRoutine() {
+    const el = document.getElementById("routineDetails");
+    el.style.display = (el.style.display === "block") ? "none" : "block";
+}
+
+setInterval(updateStatus, 1000);
+updateStatus();
+renderFullRoutine();
+</script>
+
+</body>
+</html>
